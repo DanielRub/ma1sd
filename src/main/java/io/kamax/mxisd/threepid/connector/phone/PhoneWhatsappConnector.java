@@ -17,10 +17,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package io.kamax.mxisd.threepid.connector.phone;
 
 import com.twilio.exception.ApiException;
+import io.kamax.matrix.MatrixID;
+import io.kamax.matrix._MatrixID;
+import io.kamax.matrix.client.MatrixClientContext;
+import io.kamax.matrix.client.MatrixHttpRequest;
+import io.kamax.matrix.client.MatrixHttpRoom;
+import io.kamax.matrix.client.MatrixHttpUser;
+import io.kamax.matrix.client._MatrixClient;
+import io.kamax.matrix.client._SyncData;
+import io.kamax.matrix.client.as.MatrixApplicationServiceClient;
+import io.kamax.matrix.client.regular.MatrixHttpClient;
+import io.kamax.matrix.client.regular.SyncDataJson;
+import io.kamax.matrix.hs.MatrixHomeserver;
+import io.kamax.matrix.hs._MatrixRoom;
+import io.kamax.matrix.room.RoomCreationOptions;
+import io.kamax.matrix.room._RoomCreationOptions;
+import io.kamax.mxisd.Mxisd;
+import static io.kamax.mxisd.MxisdStandaloneExec.mxisd;
+import io.kamax.mxisd.auth.UserAuthResult;
 import io.kamax.mxisd.config.threepid.connector.WhatsappConfig;
 import io.kamax.mxisd.exception.InternalServerError;
 import io.kamax.mxisd.exception.NotImplementedException;
@@ -56,8 +73,21 @@ public class PhoneWhatsappConnector implements PhoneConnector {
         recipient = "+" + recipient;
         log.info("Sending Whatsapp notification from {} to {} with {} characters", cfg.getMatrixAccountId(), recipient, content.length());
         try {
-            log.info("Notification:"+content);
+            log.info("Notification:" + content);
             //now we can send the whatsapp message
+            Mxisd currentMxisd = mxisd.getMxisd();
+            MatrixClientContext mxContext = new MatrixClientContext();
+            mxContext.setDomain(currentMxisd.getConfig().getMatrix().getDomain());
+            mxContext.setToken(currentMxisd.getConfig().getAppsvc().getEndpoint().getToHS().getToken());
+            mxContext.setHsBaseUrl(currentMxisd.getConfig().getAppsvc().getEndpoint().getToHS().getUrl());
+            MatrixApplicationServiceClient client = new MatrixApplicationServiceClient(mxContext);
+            _MatrixID whoAmI = client.getWhoAmI();
+            log.info("whoAmI=="+whoAmI);
+            _MatrixClient user = client.getUser("whatsappbot");
+            _MatrixRoom matrixRoom = user.createRoom(RoomCreationOptions.none());
+            matrixRoom.join();
+            String sendText = matrixRoom.sendText("pm --force "+recipient);
+            log.info("sendText=="+sendText);
             //Message.creator(new PhoneNumber("+" + recipient), new PhoneNumber(cfg.getNumber()), content).create();
         } catch (ApiException e) {
             throw new InternalServerError(e);

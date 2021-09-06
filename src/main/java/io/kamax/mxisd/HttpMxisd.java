@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package io.kamax.mxisd;
 
 import io.kamax.mxisd.config.MatrixConfig;
@@ -95,6 +94,10 @@ public class HttpMxisd {
         System.setProperty("org.jboss.logging.provider", "slf4j");
     }
 
+    public Mxisd getMxisd() {
+        return m;
+    }
+
     public HttpMxisd(MxisdConfig cfg) {
         m = new Mxisd(cfg);
     }
@@ -107,42 +110,34 @@ public class HttpMxisd {
         HttpHandler asNotFoundHandler = sane(new AsNotFoundHandler(m.getAs()));
 
         final RoutingHandler handler = Handlers.routing()
-            .add("OPTIONS", "/**", sane(new OptionsHandler()))
+                .add("OPTIONS", "/**", sane(new OptionsHandler()))
+                // Status endpoints
+                .get(StatusHandler.Path, sane(new StatusHandler()))
+                .get(VersionHandler.Path, sane(new VersionHandler()))
+                // Authentication endpoints
+                .get(LoginHandler.Path, sane(new LoginGetHandler(m.getAuth(), m.getHttpClient())))
+                .post(LoginHandler.Path, sane(new LoginPostHandler(m.getAuth())))
+                .post(RestAuthHandler.Path, sane(new RestAuthHandler(m.getAuth())))
+                // Directory endpoints
+                .post(UserDirectorySearchHandler.Path, sane(new UserDirectorySearchHandler(m.getDirectory())))
+                // Profile endpoints
+                .get(ProfileHandler.Path, sane(new ProfileHandler(m.getProfile())))
+                .get(InternalProfileHandler.Path, sane(new InternalProfileHandler(m.getProfile())))
+                // Registration endpoints
+                .post(Register3pidRequestTokenHandler.Path,
+                        sane(new Register3pidRequestTokenHandler(m.getReg(), m.getClientDns(), m.getHttpClient())))
+                // Invite endpoints
+                .post(RoomInviteHandler.Path, sane(new RoomInviteHandler(m.getHttpClient(), m.getClientDns(), m.getInvite())))
+                // Application Service endpoints
+                .get(AsUserHandler.Path, asUserHandler)
+                .get("/_matrix/app/v1/rooms/**", asNotFoundHandler)
+                .put(AsTransactionHandler.Path, asTxnHandler)
+                .get("/users/{" + AsUserHandler.ID + "}", asUserHandler) // Legacy endpoint
+                .get("/rooms/**", asNotFoundHandler) // Legacy endpoint
+                .put("/transactions/{" + AsTransactionHandler.ID + "}", asTxnHandler) // Legacy endpoint
 
-            // Status endpoints
-            .get(StatusHandler.Path, sane(new StatusHandler()))
-            .get(VersionHandler.Path, sane(new VersionHandler()))
-
-            // Authentication endpoints
-            .get(LoginHandler.Path, sane(new LoginGetHandler(m.getAuth(), m.getHttpClient())))
-            .post(LoginHandler.Path, sane(new LoginPostHandler(m.getAuth())))
-            .post(RestAuthHandler.Path, sane(new RestAuthHandler(m.getAuth())))
-
-            // Directory endpoints
-            .post(UserDirectorySearchHandler.Path, sane(new UserDirectorySearchHandler(m.getDirectory())))
-
-            // Profile endpoints
-            .get(ProfileHandler.Path, sane(new ProfileHandler(m.getProfile())))
-            .get(InternalProfileHandler.Path, sane(new InternalProfileHandler(m.getProfile())))
-
-            // Registration endpoints
-            .post(Register3pidRequestTokenHandler.Path,
-                sane(new Register3pidRequestTokenHandler(m.getReg(), m.getClientDns(), m.getHttpClient())))
-
-            // Invite endpoints
-            .post(RoomInviteHandler.Path, sane(new RoomInviteHandler(m.getHttpClient(), m.getClientDns(), m.getInvite())))
-
-            // Application Service endpoints
-            .get(AsUserHandler.Path, asUserHandler)
-            .get("/_matrix/app/v1/rooms/**", asNotFoundHandler)
-            .put(AsTransactionHandler.Path, asTxnHandler)
-
-            .get("/users/{" + AsUserHandler.ID + "}", asUserHandler) // Legacy endpoint
-            .get("/rooms/**", asNotFoundHandler) // Legacy endpoint
-            .put("/transactions/{" + AsTransactionHandler.ID + "}", asTxnHandler) // Legacy endpoint
-
-            // Banned endpoints
-            .get(InternalInfoHandler.Path, sane(new InternalInfoHandler()));
+                // Banned endpoints
+                .get(InternalInfoHandler.Path, sane(new InternalInfoHandler()));
         keyEndpoints(handler);
         identityEndpoints(handler);
         termsEndpoints(handler);
@@ -170,9 +165,9 @@ public class HttpMxisd {
 
     private void keyEndpoints(RoutingHandler routingHandler) {
         addEndpoints(routingHandler, Methods.GET, false,
-            new KeyGetHandler(m.getKeyManager()),
-            new RegularKeyIsValidHandler(m.getKeyManager()),
-            new EphemeralKeyIsValidHandler(m.getKeyManager())
+                new KeyGetHandler(m.getKeyManager()),
+                new RegularKeyIsValidHandler(m.getKeyManager()),
+                new EphemeralKeyIsValidHandler(m.getKeyManager())
         );
     }
 
@@ -184,16 +179,16 @@ public class HttpMxisd {
         addEndpoints(routingHandler, Methods.GET, false, new HelloHandler());
 
         addEndpoints(routingHandler, Methods.GET, true,
-            new SessionValidationGetHandler(m.getSession(), m.getConfig()),
-            new SessionTpidGetValidatedHandler(m.getSession())
+                new SessionValidationGetHandler(m.getSession(), m.getConfig()),
+                new SessionTpidGetValidatedHandler(m.getSession())
         );
         addEndpoints(routingHandler, Methods.POST, true,
-            new StoreInviteHandler(m.getConfig().getServer(), m.getInvite(), m.getKeyManager()),
-            new SessionStartHandler(m.getSession()),
-            new SessionValidationPostHandler(m.getSession()),
-            new SessionTpidBindHandler(m.getSession(), m.getInvite(), m.getSign()),
-            new SessionTpidUnbindHandler(m.getSession()),
-            new SignEd25519Handler(m.getConfig(), m.getInvite(), m.getSign())
+                new StoreInviteHandler(m.getConfig().getServer(), m.getInvite(), m.getKeyManager()),
+                new SessionStartHandler(m.getSession()),
+                new SessionValidationPostHandler(m.getSession()),
+                new SessionTpidBindHandler(m.getSession(), m.getInvite(), m.getSign()),
+                new SessionTpidUnbindHandler(m.getSession()),
+                new SignEd25519Handler(m.getConfig(), m.getInvite(), m.getSign())
         );
     }
 
@@ -202,9 +197,9 @@ public class HttpMxisd {
         if (matrixConfig.isV2()) {
             routingHandler.post(AccountRegisterHandler.Path, sane(new AccountRegisterHandler(m.getAccMgr())));
             wrapWithTokenAndAuthorizationHandlers(routingHandler, Methods.GET, new AccountGetUserInfoHandler(m.getAccMgr()),
-                AccountGetUserInfoHandler.Path, true);
+                    AccountGetUserInfoHandler.Path, true);
             wrapWithTokenAndAuthorizationHandlers(routingHandler, Methods.GET, new AccountLogoutHandler(m.getAccMgr()),
-                AccountLogoutHandler.Path, true);
+                    AccountLogoutHandler.Path, true);
         }
     }
 
@@ -220,9 +215,9 @@ public class HttpMxisd {
         MatrixConfig matrixConfig = m.getConfig().getMatrix();
         if (matrixConfig.isV2()) {
             wrapWithTokenAndAuthorizationHandlers(routingHandler, Methods.GET, new HashDetailsHandler(m.getHashManager()),
-                HashDetailsHandler.PATH, true);
+                    HashDetailsHandler.PATH, true);
             wrapWithTokenAndAuthorizationHandlers(routingHandler, Methods.POST,
-                new HashLookupHandler(m.getIdentity(), m.getHashManager()), HashLookupHandler.Path, true);
+                    new HashLookupHandler(m.getIdentity(), m.getHashManager()), HashLookupHandler.Path, true);
         }
     }
 
@@ -233,19 +228,19 @@ public class HttpMxisd {
     }
 
     private void attachHandler(RoutingHandler routingHandler, HttpString method, ApiHandler apiHandler, boolean useAuthorization,
-                               HttpHandler httpHandler) {
+            HttpHandler httpHandler) {
         MatrixConfig matrixConfig = m.getConfig().getMatrix();
         if (matrixConfig.isV1()) {
             routingHandler.add(method, apiHandler.getPath(IdentityServiceAPI.V1), sane(httpHandler));
         }
         if (matrixConfig.isV2()) {
             wrapWithTokenAndAuthorizationHandlers(routingHandler, method, httpHandler, apiHandler.getPath(IdentityServiceAPI.V2),
-                useAuthorization);
+                    useAuthorization);
         }
     }
 
     private void wrapWithTokenAndAuthorizationHandlers(RoutingHandler routingHandler, HttpString method, HttpHandler httpHandler,
-                                                       String url, boolean useAuthorization) {
+            String url, boolean useAuthorization) {
         List<PolicyConfig.PolicyObject> policyObjects = getPolicyObjects(url);
         HttpHandler wrappedHandler;
         if (useAuthorization) {

@@ -34,6 +34,7 @@ import java.util.Objects;
 public class MxisdStandaloneExec {
 
     private static final Logger log = LoggerFactory.getLogger("App");
+    public static HttpMxisd mxisd;
 
     public static void main(String[] args) {
         String logLevel = System.getenv("MA1SD_LOG_LEVEL");
@@ -101,7 +102,8 @@ public class MxisdStandaloneExec {
             log.info("ma1sd starting");
             log.info("Version: {}", Mxisd.Version);
 
-            HttpMxisd mxisd = new HttpMxisd(cfg);
+            //HttpMxisd mxisd = new HttpMxisd(cfg);
+            mxisd = new HttpMxisd(cfg);
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 mxisd.stop();
                 log.info("ma1sd stopped");
