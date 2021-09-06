@@ -1,0 +1,31 @@
+name: Application CI
+on: [push, pull_request]
+jobs:
+    pipeline:
+        name: ma1sd pipeline
+        runs-on: ubuntu-latest
+        if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.title, '[ci skip]')"
+        timeout-minutes: 12
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-java@v1
+              with:
+                java-version: 11
+            - name: Build Image
+              id: build-image
+              uses: redhat-actions/buildah-build@v2
+              with:
+                image: ma1sd
+                tags: 1.0.1
+                dockerfiles: ./Dockerfile
+            - name: Push to gitlab registry
+              id: push-to-gitlab
+              uses: redhat-actions/push-to-registry@v2
+              with:
+                image: ${{ steps.build-image.outputs.image }}
+                tags: ${{ steps.build-image.outputs.tags }}
+                registry: registry.gitlab.com/masolo-app
+                username: ${{ secrets.DOCKER_USERNAME }}
+                password: ${{ secrets.DOCKER_PASSWORD }}
+            - name: Print image url
+              run: echo "Image pushed to ${{ steps.push-to-gitlab.outputs.registry-paths }}"

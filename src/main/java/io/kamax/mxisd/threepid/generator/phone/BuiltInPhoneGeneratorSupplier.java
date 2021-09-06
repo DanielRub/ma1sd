@@ -22,6 +22,7 @@ package io.kamax.mxisd.threepid.generator.phone;
 
 import io.kamax.matrix.json.GsonUtil;
 import io.kamax.mxisd.Mxisd;
+import io.kamax.mxisd.config.threepid.medium.MediumConfig;
 import io.kamax.mxisd.config.threepid.medium.PhoneConfig;
 import io.kamax.mxisd.config.threepid.medium.PhoneSmsTemplateConfig;
 import org.apache.commons.lang3.StringUtils;
@@ -31,7 +32,8 @@ import java.util.Optional;
 public class BuiltInPhoneGeneratorSupplier implements PhoneGeneratorSupplier {
 
     @Override
-    public Optional<PhoneGenerator> apply(PhoneConfig cfg, Mxisd mxisd) {
+    public Optional<PhoneGenerator> apply(MediumConfig config, Mxisd mxisd) {
+        PhoneConfig cfg = (PhoneConfig) config;
         if (StringUtils.equals(SmsNotificationGenerator.ID, cfg.getGenerator())) {
             PhoneSmsTemplateConfig genCfg = Optional.ofNullable(cfg.getGenerators().get(SmsNotificationGenerator.ID))
                     .map(json -> GsonUtil.get().fromJson(json, PhoneSmsTemplateConfig.class))

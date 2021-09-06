@@ -21,10 +21,10 @@
 package io.kamax.mxisd.threepid.generator.phone;
 
 import io.kamax.mxisd.Mxisd;
-import io.kamax.mxisd.config.threepid.medium.PhoneConfig;
+import io.kamax.mxisd.config.threepid.medium.MediumConfig;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-public interface PhoneGeneratorSupplier extends BiFunction<PhoneConfig, Mxisd, Optional<PhoneGenerator>> {
+public interface PhoneGeneratorSupplier extends BiFunction<MediumConfig, Mxisd, Optional<PhoneGenerator>> {
 }

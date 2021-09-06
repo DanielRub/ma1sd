@@ -1,6 +1,6 @@
 /*
  * mxisd - Matrix Identity Server Daemon
- * Copyright (C) 2018 Kamax Sarl
+ * Copyright (C) 2017 Kamax Sarl
  *
  * https://www.kamax.io/
  *
@@ -18,14 +18,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxisd.threepid.connector.phone;
+package io.kamax.mxisd.config.threepid.connector;
 
-import io.kamax.mxisd.Mxisd;
-import io.kamax.mxisd.config.threepid.medium.MediumConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
-import java.util.function.BiFunction;
+public class WhatsappConfig {
 
-public interface PhoneConnectorSupplier extends BiFunction<MediumConfig, Mxisd, Optional<PhoneConnector>> {
+    private transient final Logger log = LoggerFactory.getLogger(WhatsappConfig.class);
+
+    private String matrixAccountId = "";
+
+    public String getMatrixAccountId() {
+        return matrixAccountId;
+    }
+
+    public void setMatrixAccountId(String matrixAccountId) {
+        this.matrixAccountId = matrixAccountId;
+    }
+
+    public WhatsappConfig build() {
+        log.info("--- Whatsapp connector config ---");
+        log.info("Account : {}", getMatrixAccountId());
+        return this;
+    }
 
 }

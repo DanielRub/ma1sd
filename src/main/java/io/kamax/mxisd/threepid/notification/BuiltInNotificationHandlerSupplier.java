@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package io.kamax.mxisd.threepid.notification;
 
 import com.google.gson.JsonSyntaxException;
@@ -27,6 +26,7 @@ import io.kamax.mxisd.Mxisd;
 import io.kamax.mxisd.config.threepid.connector.EmailSendGridConfig;
 import io.kamax.mxisd.config.threepid.medium.EmailConfig;
 import io.kamax.mxisd.config.threepid.medium.PhoneConfig;
+import io.kamax.mxisd.config.threepid.medium.PhoneWhatsappConfig;
 import io.kamax.mxisd.exception.ConfigurationException;
 import io.kamax.mxisd.notification.NotificationHandlerSupplier;
 import io.kamax.mxisd.notification.NotificationHandlers;
@@ -41,6 +41,7 @@ import io.kamax.mxisd.threepid.generator.phone.PhoneGeneratorSupplier;
 import io.kamax.mxisd.threepid.notification.email.EmailRawNotificationHandler;
 import io.kamax.mxisd.threepid.notification.email.EmailSendGridNotificationHandler;
 import io.kamax.mxisd.threepid.notification.phone.PhoneNotificationHandler;
+import io.kamax.mxisd.threepid.notification.phone.WhatsappNotificationHandler;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -141,7 +142,34 @@ public class BuiltInNotificationHandlerSupplier implements NotificationHandlerSu
 
                 NotificationHandlers.register(() -> new PhoneNotificationHandler(cfg, generators, connectors));
             }
+        } else if (StringUtils.equals(WhatsappNotificationHandler.ID, handler)) {
+            Object o = mxisd.getConfig().getThreepid().getMedium().get(ThreePidMedium.PhoneNumber.getId());
+            if (Objects.nonNull(o)) {
+                PhoneWhatsappConfig cfg;
+                try {
+                    cfg = GsonUtil.get().fromJson(GsonUtil.makeObj(o), PhoneWhatsappConfig.class);
+                } catch (JsonSyntaxException e) {
+                    throw new ConfigurationException("Invalid configuration for threepid msisdn notification");
+                }
+
+                List<PhoneGenerator> generators = StreamSupport
+                        .stream(ServiceLoader.load(PhoneGeneratorSupplier.class).spliterator(), false)
+                        .map(s -> s.apply(cfg, mxisd))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(Collectors.toList());
+
+                List<PhoneConnector> connectors = StreamSupport
+                        .stream(ServiceLoader.load(PhoneConnectorSupplier.class).spliterator(), false)
+                        .map(s -> s.apply(cfg, mxisd))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(Collectors.toList());
+
+                NotificationHandlers.register(() -> new WhatsappNotificationHandler(cfg, generators, connectors));
+            }
         }
+
     }
 
 }

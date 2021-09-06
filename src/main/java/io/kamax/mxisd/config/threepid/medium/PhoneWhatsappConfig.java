@@ -1,6 +1,6 @@
 /*
  * mxisd - Matrix Identity Server Daemon
- * Copyright (C) 2018 Kamax Sarl
+ * Copyright (C) 2017 Kamax Sarl
  *
  * https://www.kamax.io/
  *
@@ -18,14 +18,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.kamax.mxisd.threepid.connector.phone;
+package io.kamax.mxisd.config.threepid.medium;
 
-import io.kamax.mxisd.Mxisd;
-import io.kamax.mxisd.config.threepid.medium.MediumConfig;
+import io.kamax.mxisd.threepid.connector.phone.PhoneWhatsappConnector;
+import io.kamax.mxisd.threepid.generator.phone.SmsNotificationGenerator;
 
-import java.util.Optional;
-import java.util.function.BiFunction;
+public class PhoneWhatsappConfig extends MediumConfig {
 
-public interface PhoneConnectorSupplier extends BiFunction<MediumConfig, Mxisd, Optional<PhoneConnector>> {
+    public PhoneWhatsappConfig() {
+        setConnector(PhoneWhatsappConnector.ID);
+        setGenerator(SmsNotificationGenerator.ID);
+    }
 
 }

@@ -24,6 +24,7 @@ import io.kamax.matrix.ThreePidMedium;
 import io.kamax.matrix.json.GsonUtil;
 import io.kamax.mxisd.config.threepid.medium.EmailConfig;
 import io.kamax.mxisd.config.threepid.medium.PhoneConfig;
+import io.kamax.mxisd.config.threepid.medium.PhoneWhatsappConfig;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +35,7 @@ public class ThreePidConfig {
 
     public ThreePidConfig() { // TODO Check if this is still needed
         medium.put(ThreePidMedium.Email.getId(), GsonUtil.makeObj(new EmailConfig()));
-        medium.put(ThreePidMedium.PhoneNumber.getId(), GsonUtil.makeObj(new PhoneConfig()));
+        medium.put(ThreePidMedium.PhoneNumber.getId(), GsonUtil.makeObj(new PhoneWhatsappConfig()));
     }
 
     public Map<String, Object> getMedium() {

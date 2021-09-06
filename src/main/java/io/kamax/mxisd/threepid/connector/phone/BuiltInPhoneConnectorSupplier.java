@@ -17,13 +17,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package io.kamax.mxisd.threepid.connector.phone;
 
 import com.google.gson.JsonObject;
 import io.kamax.matrix.json.GsonUtil;
 import io.kamax.mxisd.Mxisd;
 import io.kamax.mxisd.config.threepid.connector.PhoneTwilioConfig;
+import io.kamax.mxisd.config.threepid.connector.WhatsappConfig;
+import io.kamax.mxisd.config.threepid.medium.MediumConfig;
 import io.kamax.mxisd.config.threepid.medium.PhoneConfig;
 import org.apache.commons.lang3.StringUtils;
 
@@ -32,7 +33,8 @@ import java.util.Optional;
 public class BuiltInPhoneConnectorSupplier implements PhoneConnectorSupplier {
 
     @Override
-    public Optional<PhoneConnector> apply(PhoneConfig cfg, Mxisd mxisd) {
+    public Optional<PhoneConnector> apply(MediumConfig cfg, Mxisd mxisd) {
+        //PhoneConfig cfg = (PhoneConfig) mediumConfg;
         if (StringUtils.equals(BlackholePhoneConnector.ID, cfg.getConnector())) {
             return Optional.of(new BlackholePhoneConnector());
         }
@@ -40,6 +42,10 @@ public class BuiltInPhoneConnectorSupplier implements PhoneConnectorSupplier {
         if (StringUtils.equals(PhoneSmsTwilioConnector.ID, cfg.getConnector())) {
             PhoneTwilioConfig cCfg = GsonUtil.get().fromJson(cfg.getConnectors().getOrDefault(PhoneSmsTwilioConnector.ID, new JsonObject()), PhoneTwilioConfig.class);
             return Optional.of(new PhoneSmsTwilioConnector(cCfg));
+        }
+        if (StringUtils.equals(PhoneWhatsappConnector.ID, cfg.getConnector())) {
+            WhatsappConfig cCfg = GsonUtil.get().fromJson(cfg.getConnectors().getOrDefault(PhoneWhatsappConnector.ID, new JsonObject()), WhatsappConfig.class);
+            return Optional.of(new PhoneWhatsappConnector(cCfg));
         }
 
         return Optional.empty();
