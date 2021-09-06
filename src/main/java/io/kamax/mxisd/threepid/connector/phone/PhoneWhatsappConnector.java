@@ -75,19 +75,24 @@ public class PhoneWhatsappConnector implements PhoneConnector {
         try {
             log.info("Notification:" + content);
             //now we can send the whatsapp message
+            log.info("step1:");
             Mxisd currentMxisd = mxisd.getMxisd();
             MatrixClientContext mxContext = new MatrixClientContext();
+            log.info("step2:");
+            log.info("--step--"+currentMxisd.getConfig().getMatrix().getDomain());
             mxContext.setDomain(currentMxisd.getConfig().getMatrix().getDomain());
             mxContext.setToken(currentMxisd.getConfig().getAppsvc().getEndpoint().getToHS().getToken());
+            log.info("step3:");
             mxContext.setHsBaseUrl(currentMxisd.getConfig().getAppsvc().getEndpoint().getToHS().getUrl());
             MatrixApplicationServiceClient client = new MatrixApplicationServiceClient(mxContext);
+            log.info("step4:");
             _MatrixID whoAmI = client.getWhoAmI();
-            log.info("whoAmI=="+whoAmI);
+            log.info("whoAmI==" + whoAmI);
             _MatrixClient user = client.getUser("whatsappbot");
             _MatrixRoom matrixRoom = user.createRoom(RoomCreationOptions.none());
             matrixRoom.join();
-            String sendText = matrixRoom.sendText("pm --force "+recipient);
-            log.info("sendText=="+sendText);
+            String sendText = matrixRoom.sendText("pm --force " + recipient);
+            log.info("sendText==" + sendText);
             //Message.creator(new PhoneNumber("+" + recipient), new PhoneNumber(cfg.getNumber()), content).create();
         } catch (ApiException e) {
             throw new InternalServerError(e);
