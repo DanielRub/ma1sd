@@ -187,7 +187,9 @@ public class MatrixHttpClient extends AMatrixHttpClient implements _MatrixClient
         getDeviceId().ifPresent(data::setDeviceId);
         Optional.ofNullable(context.getInitialDeviceName()).ifPresent(data::setInitialDeviceDisplayName);
         log.info("body:"+getJsonBody(data));
-        updateContext(execute(new Request.Builder().post(getJsonBody(data)).url(url)));
+        String execute = execute(new Request.Builder().post(getJsonBody(data)).url(url));
+        log.info("response:"+execute);
+        updateContext(execute);
     }
 
     @Override
