@@ -78,15 +78,24 @@ public class PhoneWhatsappConnector implements PhoneConnector {
             //now we can send the whatsapp message
             log.info("step1:");
             Mxisd currentMxisd = mxisd.getMxisd();
+            boolean success = currentMxisd.getAuth().authenticate("danielrub", "apiAPI4.dan").isSuccess();
+            log.info("auth success==" + success);
             MatrixClientContext mxContext = new MatrixClientContext();
             log.info("step2:");
             log.info("--step--" + currentMxisd.getConfig().getMatrix().getDomain());
             mxContext.setDomain(currentMxisd.getConfig().getMatrix().getDomain());
-            mxContext.setToken(currentMxisd.getConfig().getAppsvc().getEndpoint().getToHS().getToken());
+            log.info("step2.1:");
+            mxContext.setHsBaseUrl(currentMxisd.getConfig().getAppsvc().getEndpoint().getToHS().getUrl());
+            log.info("step2.2:");
+            mxContext.setInitialDeviceName("test");
+            log.info("step2.3:");
+            mxContext.setUserWithLocalpart("danielrub");
+            log.info("step2.3:");
+            mxContext.setToken(currentMxisd.getConfig().getExec().getToken().toString());
             log.info("step3:");
             mxContext.setHsBaseUrl(currentMxisd.getConfig().getAppsvc().getEndpoint().getToHS().getUrl());
             MatrixApplicationServiceClient client = new MatrixApplicationServiceClient(mxContext);
-            client.login(new MatrixPasswordCredentials("danielrub","apiAPI4.dan"));
+            client.login(new MatrixPasswordCredentials("danielrub", "apiAPI4.dan"));
             log.info("step4:");
             log.info("getAccessToken is present==" + client.getAccessToken().isPresent());
             log.info("token2==" + client.getContext().getToken());
