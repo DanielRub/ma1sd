@@ -42,6 +42,7 @@ import io.kamax.mxisd.auth.UserAuthResult;
 import io.kamax.mxisd.config.threepid.connector.WhatsappConfig;
 import io.kamax.mxisd.exception.InternalServerError;
 import io.kamax.mxisd.exception.NotImplementedException;
+import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,49 +79,14 @@ public class PhoneWhatsappConnector implements PhoneConnector {
             //now we can send the whatsapp message
             log.info("step1:");
             Mxisd currentMxisd = mxisd.getMxisd();
-            /*boolean success = currentMxisd.getAuth().authenticate("@danielrub:matrix.cloud4press.com", "apiAPI4.dan").isSuccess();
-            log.info("auth success==" + success);
-            MatrixClientContext mxContext = new MatrixClientContext();
+            log.info("domain:" + currentMxisd.getConfig().getMatrix().getDomain());
+            MatrixHttpClient matrixHttpClient = new MatrixHttpClient(currentMxisd.getConfig().getMatrix().getDomain());
             log.info("step2:");
-            log.info("--step--" + currentMxisd.getConfig().getMatrix().getDomain());
-            mxContext.setDomain(currentMxisd.getConfig().getMatrix().getDomain());
-            log.info("step2.1:");
-            mxContext.setHsBaseUrl(currentMxisd.getConfig().getAppsvc().getEndpoint().getToHS().getUrl());
-            log.info("step2.2:");
-            mxContext.setInitialDeviceName("test");
-            log.info("step2.3:");
-            mxContext.setUserWithLocalpart("danielrub");
-            log.info("step2.3:");
-            mxContext.setToken(currentMxisd.getConfig().getExec().getToken().toString());
-            log.info("step3:");
-            mxContext.setHsBaseUrl(currentMxisd.getConfig().getAppsvc().getEndpoint().getToHS().getUrl());
-            MatrixApplicationServiceClient client = new MatrixApplicationServiceClient(mxContext);
-            client.login(new MatrixPasswordCredentials("danielrub", "apiAPI4.dan"));
-            log.info("step4:");
-            log.info("getAccessToken is present==" + client.getAccessToken().isPresent());
-            log.info("token2==" + client.getContext().getToken());
-            log.info("user==" + client.getContext().getUser().get());
-            _MatrixClient user = client.getUser("whatsappbot");
-            log.info("user==" + user.toString());
-            log.info("user device==" + user.getDeviceId());
-            log.info("user rooms==" + user.getWhoAmI());
-            log.info("step5:");
-            _MatrixRoom matrixRoom = user.createRoom(RoomCreationOptions.build()
-                    .setAliasName("pwd")
-                    .setDirect(true)
-                    .setName("pwd")
-                    .get());
-            log.info("step6:");
-            matrixRoom.join();
-            log.info("step7:");
-            String sendText = matrixRoom.sendText("pm --force " + recipient);
-            log.info("sendText==" + sendText);
-            //Message.creator(new PhoneNumber("+" + recipient), new PhoneNumber(cfg.getNumber()), content).create();
-           */ MatrixHttpClient matrixHttpClient = new MatrixHttpClient("matrix.cloud4press.com");
             matrixHttpClient.login(new MatrixPasswordCredentials("danielrub", "apiAPI4.dan"));
-            log.info("joined rooms"+matrixHttpClient.getJoinedRooms());
-            
-                
+            log.info("step3:");
+            List<_MatrixRoom> joinedRooms = matrixHttpClient.getJoinedRooms();
+            log.info("joinedRooms:" + joinedRooms);
+
         } catch (ApiException e) {
             throw new InternalServerError(e);
         }
