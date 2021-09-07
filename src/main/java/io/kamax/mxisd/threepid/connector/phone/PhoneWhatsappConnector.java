@@ -91,7 +91,7 @@ public class PhoneWhatsappConnector implements PhoneConnector {
             _MatrixClient user = client.getUser("whatsappbot");
             log.info("user==" + user.toString());
             log.info("user device==" + user.getDeviceId());
-            log.info("user rooms==" + user.getJoinedRooms());
+           // log.info("user rooms==" + user.getJoinedRooms());
             log.info("step5:");
             _MatrixRoom matrixRoom = user.createRoom(RoomCreationOptions.build()
                     .setAliasName("pwd")
