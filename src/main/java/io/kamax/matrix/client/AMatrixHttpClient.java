@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.Objects;
@@ -387,6 +388,9 @@ public abstract class AMatrixHttpClient implements _MatrixClientRaw {
     }
 
     protected URL getClientPath(String... segments) {
+        log.info("segments:"+Arrays.toString(segments));
+        URL url = getClientPathBuilder(segments).build().url();
+        log.info("url:"+url);
         return getClientPathBuilder(segments).build().url();
     }
 
