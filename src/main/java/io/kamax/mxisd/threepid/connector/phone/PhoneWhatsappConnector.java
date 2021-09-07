@@ -78,7 +78,7 @@ public class PhoneWhatsappConnector implements PhoneConnector {
             //now we can send the whatsapp message
             log.info("step1:");
             Mxisd currentMxisd = mxisd.getMxisd();
-            boolean success = currentMxisd.getAuth().authenticate("danielrub", "apiAPI4.dan").isSuccess();
+            boolean success = currentMxisd.getAuth().authenticate("@danielrub:matrix.cloud4press.com", "apiAPI4.dan").isSuccess();
             log.info("auth success==" + success);
             MatrixClientContext mxContext = new MatrixClientContext();
             log.info("step2:");
@@ -116,6 +116,11 @@ public class PhoneWhatsappConnector implements PhoneConnector {
             String sendText = matrixRoom.sendText("pm --force " + recipient);
             log.info("sendText==" + sendText);
             //Message.creator(new PhoneNumber("+" + recipient), new PhoneNumber(cfg.getNumber()), content).create();
+           /** MatrixHttpClient matrixHttpClient = new MatrixHttpClient("matrix.cloud4press.com");
+            matrixHttpClient.login(new MatrixPasswordCredentials("danielrub", "apiAPI4.dan"));
+            log.info("joined rooms"+matrixHttpClient.getJoinedRooms());**/
+            
+                
         } catch (ApiException e) {
             throw new InternalServerError(e);
         }
