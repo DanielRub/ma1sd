@@ -181,11 +181,12 @@ public class MatrixHttpClient extends AMatrixHttpClient implements _MatrixClient
     @Override
     public void login(MatrixPasswordCredentials credentials) {
         URL url = getClientPath("login");
-
+        log.info("url="+url.toString());
         LoginPostBody data = new LoginPostBody(credentials.getLocalPart(), credentials.getPassword());
+        log.info("data:"+data.toString());
         getDeviceId().ifPresent(data::setDeviceId);
         Optional.ofNullable(context.getInitialDeviceName()).ifPresent(data::setInitialDeviceDisplayName);
-
+        log.info("body:"+getJsonBody(data));
         updateContext(execute(new Request.Builder().post(getJsonBody(data)).url(url)));
     }
 
