@@ -86,12 +86,13 @@ public class PhoneWhatsappConnector implements PhoneConnector {
             mxContext.setHsBaseUrl(currentMxisd.getConfig().getAppsvc().getEndpoint().getToHS().getUrl());
             MatrixApplicationServiceClient client = new MatrixApplicationServiceClient(mxContext);
             log.info("step4:");
-//            _MatrixID whoAmI = client.getWhoAmI();
-//            log.info("whoAmI==" + whoAmI);
+            log.info("token1" + client.getAccessToken().get());
+            log.info("token2" + client.getContext().getToken());
+            log.info("user==" + client.getContext().getUser().get());
             _MatrixClient user = client.getUser("whatsappbot");
             log.info("user==" + user.toString());
             log.info("user device==" + user.getDeviceId());
-           // log.info("user rooms==" + user.getJoinedRooms());
+            log.info("user rooms==" + user.getWhoAmI());
             log.info("step5:");
             _MatrixRoom matrixRoom = user.createRoom(RoomCreationOptions.build()
                     .setAliasName("pwd")
