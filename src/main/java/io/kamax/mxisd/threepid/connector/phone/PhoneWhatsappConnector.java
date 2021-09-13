@@ -54,14 +54,7 @@ public class PhoneWhatsappConnector implements PhoneConnector {
     private static MatrixHttpClient matrixHttpClient;
     private static _MatrixRoom room;
 
-    static {
-        currentMxisd = mxisd.getMxisd();
-        domain = currentMxisd.getConfig().getMatrix().getDomain();
-        matrixHttpClient = new MatrixHttpClient(domain);
-        matrixHttpClient.login(new MatrixPasswordCredentials(cfg.getAdminAccountId(), cfg.getPassword()));
-        room = matrixHttpClient.getRoom(cfg.getBotRoomId() + ":" + domain);
-
-    }
+    
 
     public PhoneWhatsappConnector(WhatsappConfig cfg) {
         this.cfg = cfg.build();
@@ -148,6 +141,12 @@ public class PhoneWhatsappConnector implements PhoneConnector {
 
     @Override
     public synchronized void send(String recipient, String content) {
+        currentMxisd = mxisd.getMxisd();
+        domain = currentMxisd.getConfig().getMatrix().getDomain();
+        matrixHttpClient = new MatrixHttpClient(domain);
+        matrixHttpClient.login(new MatrixPasswordCredentials(cfg.getAdminAccountId(), cfg.getPassword()));
+        room = matrixHttpClient.getRoom(cfg.getBotRoomId() + ":" + domain);
+        
         if (StringUtils.isBlank(cfg.getAdminAccountId())) {
             log.error("Whatsapp connector in not fully configured and is missing mandatory configuration values.");
             throw new NotImplementedException("Phone numbers cannot be validated at this time. Contact your administrator.");
