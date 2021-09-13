@@ -20,29 +20,24 @@
 package io.kamax.mxisd.threepid.connector.phone;
 
 import com.twilio.exception.ApiException;
-import io.kamax.matrix.MatrixID;
-import io.kamax.matrix._MatrixID;
-import io.kamax.matrix.client.MatrixClientContext;
-import io.kamax.matrix.client.MatrixHttpRequest;
-import io.kamax.matrix.client.MatrixHttpRoom;
-import io.kamax.matrix.client.MatrixHttpUser;
 import io.kamax.matrix.client.MatrixPasswordCredentials;
-import io.kamax.matrix.client._MatrixClient;
 import io.kamax.matrix.client._SyncData;
-import io.kamax.matrix.client.as.MatrixApplicationServiceClient;
+import io.kamax.matrix.client._SyncData.InvitedRoom;
+import io.kamax.matrix.client._SyncData.JoinedRoom;
 import io.kamax.matrix.client.regular.MatrixHttpClient;
-import io.kamax.matrix.client.regular.SyncDataJson;
-import io.kamax.matrix.hs.MatrixHomeserver;
+import io.kamax.matrix.client.regular.SyncOptions;
+import io.kamax.matrix.event._MatrixPersistentEvent;
 import io.kamax.matrix.hs._MatrixRoom;
-import io.kamax.matrix.room.RoomCreationOptions;
-import io.kamax.matrix.room._RoomCreationOptions;
+import io.kamax.matrix.json.event.MatrixJsonRoomMessageEvent;
 import io.kamax.mxisd.Mxisd;
 import static io.kamax.mxisd.MxisdStandaloneExec.mxisd;
-import io.kamax.mxisd.auth.UserAuthResult;
 import io.kamax.mxisd.config.threepid.connector.WhatsappConfig;
 import io.kamax.mxisd.exception.InternalServerError;
 import io.kamax.mxisd.exception.NotImplementedException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +48,20 @@ public class PhoneWhatsappConnector implements PhoneConnector {
 
     private transient final Logger log = LoggerFactory.getLogger(PhoneWhatsappConnector.class);
 
-    private WhatsappConfig cfg;
+    private static WhatsappConfig cfg;
+    private static Mxisd currentMxisd;
+    private static String domain;
+    private static MatrixHttpClient matrixHttpClient;
+    private static _MatrixRoom room;
+
+    static {
+        currentMxisd = mxisd.getMxisd();
+        domain = currentMxisd.getConfig().getMatrix().getDomain();
+        matrixHttpClient = new MatrixHttpClient(domain);
+        matrixHttpClient.login(new MatrixPasswordCredentials(cfg.getAdminAccountId(), cfg.getPassword()));
+        room = matrixHttpClient.getRoom(cfg.getBotRoomId() + ":" + domain);
+
+    }
 
     public PhoneWhatsappConnector(WhatsappConfig cfg) {
         this.cfg = cfg.build();
@@ -65,27 +73,102 @@ public class PhoneWhatsappConnector implements PhoneConnector {
         return ID;
     }
 
+    /**
+     * public static void main(String[] args) throws MalformedURLException {
+     * MatrixHttpClient matrixHttpClient = new MatrixHttpClient(new
+     * URL("https://matrix.cloud4press.com")); matrixHttpClient.login(new
+     * MatrixPasswordCredentials("danielrub", "apiAPI4.dan")); _MatrixRoom room
+     * = matrixHttpClient.getRoom("!tVSdcpAgAyfPzXZoLE:matrix.cloud4press.com");
+     *
+     * System.out.println("message0 = " + readResponse(matrixHttpClient));
+     * sendMessageToRoom(matrixHttpClient, room.getId(), "pm --force
+     * +243814444817"); String message1 = readResponse(matrixHttpClient);
+     * System.out.println("message1 = " + message1); if (message1 != null &&
+     * message1.replace(")", "").endsWith(":matrix.cloud4press.com")) { String[]
+     * split = message1.replace(")", "").split("/"); String roomId =
+     * split[split.length - 1]; sendMessageToRoom(matrixHttpClient, roomId,
+     * "Hello"); } else { String roomId = tryJoinRoom(matrixHttpClient,
+     * "243814444817"); if (roomId != null) {
+     * sendMessageToRoom(matrixHttpClient, roomId, "Hello"); } }
+     *
+     * }
+     */
+    private void sendMessageToRoom(MatrixHttpClient matrixHttpClient, String roomId, String message) {
+        matrixHttpClient.getRoom(roomId).sendText(message);
+    }
+
+    private String readResponse(MatrixHttpClient matrixHttpClient) {
+        String message = null;
+        //String token = null;
+        int counter = 0;
+        do {
+            _SyncData data = matrixHttpClient.sync(SyncOptions.build().setSince(null).get());
+            JoinedRoom joinedRoom = (JoinedRoom) data.getRooms().getJoined().stream().filter(a -> a.getId().equals("!tVSdcpAgAyfPzXZoLE:matrix.cloud4press.com")).findFirst().get();
+            List<_MatrixPersistentEvent> events = joinedRoom.getTimeline().getEvents();
+            Optional<MatrixJsonRoomMessageEvent> messageEvent = events.stream()
+                    .filter(event -> event.getType().equals("m.room.message"))
+                    .map(pEvent -> new MatrixJsonRoomMessageEvent(pEvent.getJson()))
+                    .filter(a -> a.getSender().getLocalPart().equals("whatsappbot"))
+                    .reduce((a, b) -> b);
+
+            if (messageEvent.isPresent()) {
+                message = messageEvent.get().getBody();
+            }
+            counter++;
+
+        } while (message == null && counter < 20);
+        return message;
+    }
+
+    private String tryJoinRoom(MatrixHttpClient matrixHttpClient, String msisdn) {
+        MatrixJsonRoomMessageEvent msg = null;
+        String token = null;
+        String roomId = null;
+        int counter = 0;
+        do {
+            _SyncData data = matrixHttpClient.sync(SyncOptions.build().setSince(token).get());
+            Optional<_MatrixRoom> roomFound = data.getRooms().getInvited()
+                    .stream()
+                    .map(a -> matrixHttpClient.getRoom(a.getId()))
+                    .filter(room -> {
+                        log.debug("joining.. room :" + room.getId());
+                        room.join();
+                        return room.getJoinedUsers().size() == 2 && room.getJoinedUsers().stream().anyMatch(user -> user.getId().getLocalPart().equals("whatsapp_" + msisdn));
+                    }).findFirst();
+            if (roomFound.isPresent()) {
+                roomFound.get().join();
+                roomId = roomFound.get().getId();
+            } else {
+                token = data.nextBatchToken();
+                counter++;
+            }
+        } while (roomId == null && counter < 20);
+        return roomId;
+    }
+
     @Override
-    public void send(String recipient, String content) {
-        if (StringUtils.isBlank(cfg.getMatrixAccountId())) {
+    public synchronized void send(String recipient, String content) {
+        if (StringUtils.isBlank(cfg.getAdminAccountId())) {
             log.error("Whatsapp connector in not fully configured and is missing mandatory configuration values.");
             throw new NotImplementedException("Phone numbers cannot be validated at this time. Contact your administrator.");
         }
-
-        recipient = "+" + recipient;
-        log.info("Sending Whatsapp notification from {} to {} with {} characters", cfg.getMatrixAccountId(), recipient, content.length());
+        log.info("Sending Whatsapp notification from {} to {} with {} characters", cfg.getAdminAccountId(), recipient, content.length());
         try {
-            log.info("Notification:" + content);
-            //now we can send the whatsapp message
-            log.info("step1:");
-            Mxisd currentMxisd = mxisd.getMxisd();
-            log.info("domain:" + currentMxisd.getConfig().getMatrix().getDomain());
-            MatrixHttpClient matrixHttpClient = new MatrixHttpClient(currentMxisd.getConfig().getMatrix().getDomain());
-            log.info("step2:");
-            matrixHttpClient.login(new MatrixPasswordCredentials("danielrub", "apiAPI4.dan"));
-            log.info("step3:");
-            List<_MatrixRoom> joinedRooms = matrixHttpClient.getJoinedRooms();
-            log.info("joinedRooms:" + joinedRooms);
+            log.debug("Notification:" + content);
+            log.debug("previous message = " + readResponse(matrixHttpClient));
+            sendMessageToRoom(matrixHttpClient, room.getId(), "pm --force +" + recipient);
+            String message1 = readResponse(matrixHttpClient);
+            log.debug("current message = " + message1);
+            if (message1 != null && message1.replace(")", "").endsWith(":" + domain)) {
+                String[] split = message1.replace(")", "").split("/");
+                String roomId = split[split.length - 1];
+                sendMessageToRoom(matrixHttpClient, roomId, content);
+            } else {
+                String roomId = tryJoinRoom(matrixHttpClient, recipient);
+                if (roomId != null) {
+                    sendMessageToRoom(matrixHttpClient, roomId, content);
+                }
+            }
 
         } catch (ApiException e) {
             throw new InternalServerError(e);

@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package io.kamax.mxisd.config.threepid.connector;
 
 import org.slf4j.Logger;
@@ -27,20 +26,40 @@ public class WhatsappConfig {
 
     private transient final Logger log = LoggerFactory.getLogger(WhatsappConfig.class);
 
-    private String matrixAccountId = "";
+    private String adminAccountId = "";
+    private String password = "";
+    private String botRoomId = "";
 
-    public String getMatrixAccountId() {
-        return matrixAccountId;
+    public String getPassword() {
+        return password;
     }
 
-    public void setMatrixAccountId(String matrixAccountId) {
-        this.matrixAccountId = matrixAccountId;
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getBotRoomId() {
+        return botRoomId;
+    }
+
+    public void setBotRoomId(String botRoomId) {
+        this.botRoomId = botRoomId;
+    }
+
+    public String getAdminAccountId() {
+        return adminAccountId;
+    }
+
+    public void setAdminAccountId(String adminAccountId) {
+        this.adminAccountId = adminAccountId;
     }
 
     public WhatsappConfig build() {
         log.info("--- Whatsapp connector config ---");
-        log.info("Account : {}", getMatrixAccountId());
+        log.info("Account Id : {}", getAdminAccountId());
+        log.info("Bot room id : {}", getBotRoomId());
+
         return this;
     }
 
-    }
+}
