@@ -54,8 +54,6 @@ public class PhoneWhatsappConnector implements PhoneConnector {
     private static MatrixHttpClient matrixHttpClient;
     private static _MatrixRoom room;
 
-    
-
     public PhoneWhatsappConnector(WhatsappConfig cfg) {
         this.cfg = cfg.build();
         log.info("Whatsapp has been initiated");
@@ -141,17 +139,25 @@ public class PhoneWhatsappConnector implements PhoneConnector {
 
     @Override
     public synchronized void send(String recipient, String content) {
-        currentMxisd = mxisd.getMxisd();
-        domain = currentMxisd.getConfig().getMatrix().getDomain();
-        matrixHttpClient = new MatrixHttpClient(domain);
-        matrixHttpClient.login(new MatrixPasswordCredentials(cfg.getAdminAccountId(), cfg.getPassword()));
-        room = matrixHttpClient.getRoom(cfg.getBotRoomId() + ":" + domain);
-        
+
         if (StringUtils.isBlank(cfg.getAdminAccountId())) {
             log.error("Whatsapp connector in not fully configured and is missing mandatory configuration values.");
             throw new NotImplementedException("Phone numbers cannot be validated at this time. Contact your administrator.");
         }
         log.info("Sending Whatsapp notification from {} to {} with {} characters", cfg.getAdminAccountId(), recipient, content.length());
+
+        log.debug("step1");
+        currentMxisd = mxisd.getMxisd();
+        log.debug("step2");
+        domain = currentMxisd.getConfig().getMatrix().getDomain();
+        log.debug("step3");
+        matrixHttpClient = new MatrixHttpClient(domain);
+        log.debug("step4");
+        matrixHttpClient.login(new MatrixPasswordCredentials(cfg.getAdminAccountId(), cfg.getPassword()));
+        log.debug("step5");
+        room = matrixHttpClient.getRoom(cfg.getBotRoomId() + ":" + domain);
+        log.debug("step6");
+
         try {
             log.debug("Notification:" + content);
             log.debug("previous message = " + readResponse(matrixHttpClient));
