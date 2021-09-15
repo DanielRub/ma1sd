@@ -65,20 +65,20 @@ public class PhoneWhatsappConnector implements PhoneConnector {
         return ID;
     }
 
-    public static void main(String[] args) throws MalformedURLException {
-        System.out.println("step1");
-        domain = "matrix.cloud4press.com";
-        System.out.println("step3");
-        matrixHttpClient = new MatrixHttpClient(new URL(domain));
-        System.out.println("step4");
-        matrixHttpClient.login(new MatrixPasswordCredentials("danielrub", "apiAPI4.dan"));
-        System.out.println("step5");
-        room = matrixHttpClient.getRoom("!tVSdcpAgAyfPzXZoLE" + ":" + domain);
-        System.out.println("step6");
-
-        
-
-    }
+//    public static void main(String[] args) throws MalformedURLException {
+//        System.out.println("step1");
+//        domain = "matrix.cloud4press.com";
+//        System.out.println("step3");
+//        matrixHttpClient = new MatrixHttpClient(new URL("https://"+domain));
+//        System.out.println("step4");
+//        matrixHttpClient.login(new MatrixPasswordCredentials("danielrub", "apiAPI4.dan"));
+//        System.out.println("step5");
+//        room = matrixHttpClient.getRoom("!tVSdcpAgAyfPzXZoLE" + ":" + domain);
+//        System.out.println("step6");
+//
+//        
+//
+//    }
 
     /**
      * public static void main(String[] args) throws MalformedURLException {
@@ -129,11 +129,11 @@ public class PhoneWhatsappConnector implements PhoneConnector {
 
     private String tryJoinRoom(MatrixHttpClient matrixHttpClient, String msisdn) {
         MatrixJsonRoomMessageEvent msg = null;
-        String token = null;
+        //String token = null;
         String roomId = null;
         int counter = 0;
         do {
-            _SyncData data = matrixHttpClient.sync(SyncOptions.build().setSince(token).get());
+            _SyncData data = matrixHttpClient.sync(SyncOptions.build().setSince(null).get());
             Optional<_MatrixRoom> roomFound = data.getRooms().getInvited()
                     .stream()
                     .map(a -> matrixHttpClient.getRoom(a.getId()))
@@ -146,7 +146,7 @@ public class PhoneWhatsappConnector implements PhoneConnector {
                 roomFound.get().join();
                 roomId = roomFound.get().getId();
             } else {
-                token = data.nextBatchToken();
+                //token = data.nextBatchToken();
                 counter++;
             }
         } while (roomId == null && counter < 20);
@@ -164,20 +164,12 @@ public class PhoneWhatsappConnector implements PhoneConnector {
             }
             log.info("Sending Whatsapp notification from {} to {} with {} characters", cfg.getAdminAccountId(), recipient, content.length());
             
-            log.debug("step1");
             currentMxisd = mxisd.getMxisd();
-            log.debug("step2");
             domain = currentMxisd.getConfig().getMatrix().getDomain();
-            log.debug("step3");
             matrixHttpClient = new MatrixHttpClient(new URL(domain.contains("://") ? domain : "https://"+domain));
-            log.debug("step4");
             matrixHttpClient.login(new MatrixPasswordCredentials(cfg.getAdminAccountId(), cfg.getPassword()));
-            log.debug("step5");
-            room = matrixHttpClient.getRoom(cfg.getBotRoomId() + ":" + domain);
-            log.debug("step6");
-            
+            room = matrixHttpClient.getRoom(cfg.getBotRoomId() + ":" + domain);            
             try {
-                log.debug("Notification:" + content);
                 log.debug("previous message = " + readResponse(matrixHttpClient));
                 sendMessageToRoom(matrixHttpClient, room.getId(), "pm --force +" + recipient);
                 String message1 = readResponse(matrixHttpClient);
