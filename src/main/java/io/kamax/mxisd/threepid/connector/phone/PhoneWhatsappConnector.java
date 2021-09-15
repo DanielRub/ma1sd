@@ -109,7 +109,7 @@ public class PhoneWhatsappConnector implements PhoneConnector {
         //String token = null;
         int counter = 0;
         do {
-            _SyncData data = matrixHttpClient.sync(SyncOptions.build().setSince(null).get());
+            _SyncData data = matrixHttpClient.sync(SyncOptions.build().get());
             JoinedRoom joinedRoom = (JoinedRoom) data.getRooms().getJoined().stream().filter(a -> a.getId().equals("!tVSdcpAgAyfPzXZoLE:matrix.cloud4press.com")).findFirst().get();
             List<_MatrixPersistentEvent> events = joinedRoom.getTimeline().getEvents();
             Optional<MatrixJsonRoomMessageEvent> messageEvent = events.stream()
@@ -133,7 +133,7 @@ public class PhoneWhatsappConnector implements PhoneConnector {
         String roomId = null;
         int counter = 0;
         do {
-            _SyncData data = matrixHttpClient.sync(SyncOptions.build().setSince(null).get());
+            _SyncData data = matrixHttpClient.sync(SyncOptions.build().get());
             Optional<_MatrixRoom> roomFound = data.getRooms().getInvited()
                     .stream()
                     .map(a -> matrixHttpClient.getRoom(a.getId()))
