@@ -38,6 +38,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +63,21 @@ public class PhoneWhatsappConnector implements PhoneConnector {
     @Override
     public String getId() {
         return ID;
+    }
+
+    public static void main(String[] args) throws MalformedURLException {
+        System.out.println("step1");
+        domain = "matrix.cloud4press.com";
+        System.out.println("step3");
+        matrixHttpClient = new MatrixHttpClient(new URL(domain));
+        System.out.println("step4");
+        matrixHttpClient.login(new MatrixPasswordCredentials("danielrub", "apiAPI4.dan"));
+        System.out.println("step5");
+        room = matrixHttpClient.getRoom("!tVSdcpAgAyfPzXZoLE" + ":" + domain);
+        System.out.println("step6");
+
+        
+
     }
 
     /**
@@ -140,43 +156,48 @@ public class PhoneWhatsappConnector implements PhoneConnector {
     @Override
     public synchronized void send(String recipient, String content) {
 
-        if (StringUtils.isBlank(cfg.getAdminAccountId())) {
-            log.error("Whatsapp connector in not fully configured and is missing mandatory configuration values.");
-            throw new NotImplementedException("Phone numbers cannot be validated at this time. Contact your administrator.");
-        }
-        log.info("Sending Whatsapp notification from {} to {} with {} characters", cfg.getAdminAccountId(), recipient, content.length());
-
-        log.debug("step1");
-        currentMxisd = mxisd.getMxisd();
-        log.debug("step2");
-        domain = currentMxisd.getConfig().getMatrix().getDomain();
-        log.debug("step3");
-        matrixHttpClient = new MatrixHttpClient(domain);
-        log.debug("step4");
-        matrixHttpClient.login(new MatrixPasswordCredentials(cfg.getAdminAccountId(), cfg.getPassword()));
-        log.debug("step5");
-        room = matrixHttpClient.getRoom(cfg.getBotRoomId() + ":" + domain);
-        log.debug("step6");
-
         try {
-            log.debug("Notification:" + content);
-            log.debug("previous message = " + readResponse(matrixHttpClient));
-            sendMessageToRoom(matrixHttpClient, room.getId(), "pm --force +" + recipient);
-            String message1 = readResponse(matrixHttpClient);
-            log.debug("current message = " + message1);
-            if (message1 != null && message1.replace(")", "").endsWith(":" + domain)) {
-                String[] split = message1.replace(")", "").split("/");
-                String roomId = split[split.length - 1];
-                sendMessageToRoom(matrixHttpClient, roomId, content);
-            } else {
-                String roomId = tryJoinRoom(matrixHttpClient, recipient);
-                if (roomId != null) {
-                    sendMessageToRoom(matrixHttpClient, roomId, content);
-                }
+            
+            if (StringUtils.isBlank(cfg.getAdminAccountId())) {
+                log.error("Whatsapp connector in not fully configured and is missing mandatory configuration values.");
+                throw new NotImplementedException("Phone numbers cannot be validated at this time. Contact your administrator.");
             }
-
-        } catch (ApiException e) {
-            throw new InternalServerError(e);
+            log.info("Sending Whatsapp notification from {} to {} with {} characters", cfg.getAdminAccountId(), recipient, content.length());
+            
+            log.debug("step1");
+            currentMxisd = mxisd.getMxisd();
+            log.debug("step2");
+            domain = currentMxisd.getConfig().getMatrix().getDomain();
+            log.debug("step3");
+            matrixHttpClient = new MatrixHttpClient(new URL(domain.contains("://") ? domain : "https://"+domain));
+            log.debug("step4");
+            matrixHttpClient.login(new MatrixPasswordCredentials(cfg.getAdminAccountId(), cfg.getPassword()));
+            log.debug("step5");
+            room = matrixHttpClient.getRoom(cfg.getBotRoomId() + ":" + domain);
+            log.debug("step6");
+            
+            try {
+                log.debug("Notification:" + content);
+                log.debug("previous message = " + readResponse(matrixHttpClient));
+                sendMessageToRoom(matrixHttpClient, room.getId(), "pm --force +" + recipient);
+                String message1 = readResponse(matrixHttpClient);
+                log.debug("current message = " + message1);
+                if (message1 != null && message1.replace(")", "").endsWith(":" + domain)) {
+                    String[] split = message1.replace(")", "").split("/");
+                    String roomId = split[split.length - 1];
+                    sendMessageToRoom(matrixHttpClient, roomId, content);
+                } else {
+                    String roomId = tryJoinRoom(matrixHttpClient, recipient);
+                    if (roomId != null) {
+                        sendMessageToRoom(matrixHttpClient, roomId, content);
+                    }
+                }
+                
+            } catch (ApiException e) {
+                throw new InternalServerError(e);
+            }
+        } catch (MalformedURLException ex) {
+            java.util.logging.Logger.getLogger(PhoneWhatsappConnector.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
